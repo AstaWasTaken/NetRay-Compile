@@ -58,9 +58,9 @@ bundle exec jekyll serve --config _config.yml,_config.local.yml
 
 Then open `http://127.0.0.1:4000/`.
 
-# Roblox Plugin
+### Roblox Plugin
 - To contribute to the Plugin check [Roblox-Plugin/README.md](Roblox-Plugin/README.md)
 
-# Compiler + IDL
+### Compiler + IDL
 - To Contribute to Compiler and/or IDL check [src](src)
 - Ensure it passes `VerifyForbidden` before submitting Pull Request

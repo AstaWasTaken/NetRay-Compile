@@ -1,7 +1,7 @@
 title: NetRay Compiler Docs
 description: Documentation for the NetRay IDL compiler Studio plugin
 url: https://astawastaken.github.io
-baseurl: "/NetRay-Compiler"
+baseurl: "/NetRay-Compile"
 remote_theme: just-the-docs/just-the-docs@v0.8.1
 color_scheme: netray
 search_enabled: true

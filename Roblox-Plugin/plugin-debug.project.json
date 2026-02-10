@@ -1,0 +1,21 @@
+{
+  "name": "NetRayCompilerPluginDebug",
+  "emitLegacyScripts": false,
+  "tree": {
+    "$className": "DataModel",
+    "PluginDebugService": {
+      "NetRayCompilerPlugin": {
+        "$className": "Plugin",
+        "Main": {
+          "$path": "NetRayCompilerPlugin.server.luau",
+          "$properties": {
+            "RunContext": "Plugin"
+          },
+          "Compiler": {
+            "$path": "Compiler"
+          }
+        }
+      }
+    }
+  }
+}

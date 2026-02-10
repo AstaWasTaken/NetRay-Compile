@@ -1,0 +1,21 @@
+{
+  "name": "NetRayCompilerSync",
+  "emitLegacyScripts": false,
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Roblox-Plugin": {
+        "$className": "Folder",
+        "NetRayCompilerPlugin": {
+          "$path": "NetRayCompilerPlugin.server.luau",
+          "$properties": {
+            "RunContext": "Plugin"
+          },
+          "Compiler": {
+            "$path": "Compiler"
+          }
+        }
+      }
+    }
+  }
+}

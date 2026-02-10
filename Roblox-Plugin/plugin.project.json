@@ -1,0 +1,13 @@
+{
+  "name": "NetRayCompilerPlugin",
+  "emitLegacyScripts": false,
+  "tree": {
+    "$path": "NetRayCompilerPlugin.server.luau",
+    "$properties": {
+      "RunContext": "Plugin"
+    },
+    "Compiler": {
+      "$path": "Compiler"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+struct Pose {
+  id: u16
+  x: i8
+  y: i16
+  z: i8
+  orientation: i16
+  animation: u8
+}
+
+event StructOfNumbers {
+        From: Client,
+        Type: Reliable,
+        Call: SingleSync,
+        Data: array<Pose, 50>,
+    }
+
+event Booleans {
+  From: Client,
+  Type: Reliable,
+  Call: SingleSync,
+  Data: array<boolean, 50>, 
+}

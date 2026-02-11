@@ -1,22 +1,21 @@
-struct Pose {
-  id: u16
-  x: i8
-  y: i16
-  z: i8
-  orientation: i16
-  animation: u8
+struct Entities {
+		brand : string,
+		carName : string,
+		carId : u16,
+		available : boolean,
+		dealers : u8,
+		price : f64
 }
 
-event StructOfNumbers {
-        From: Client,
-        Type: Reliable,
-        Call: SingleSync,
-        Data: array<Pose, 50>,
-    }
+event MyEvent {
+	From: Client,
+	Type: Reliable,
+	Call: SingleSync,
+	Data: Entities
+}
 
-event Booleans {
-  From: Client,
-  Type: Reliable,
-  Call: SingleSync,
-  Data: array<boolean, 50>, 
+function Ping {
+  Yield: SingleSync,
+  Data: (f64),
+  Return: (f64),
 }

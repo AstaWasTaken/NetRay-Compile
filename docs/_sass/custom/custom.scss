@@ -28,7 +28,7 @@
 }
 
 html {
-  font-size: clamp(15px, 0.45vw + 13.4px, 17px);
+  font-size: clamp(15px, calc(0.45vw + 13.4px), 17px);
 }
 
 html,
@@ -289,7 +289,7 @@ a {
 
 .main-content p,
 .main-content li {
-  font-size: clamp(0.95rem, 0.22vw + 0.9rem, 1.02rem);
+  font-size: clamp(0.95rem, calc(0.22vw + 0.9rem), 1.02rem);
   color: var(--nr-text);
 }
 

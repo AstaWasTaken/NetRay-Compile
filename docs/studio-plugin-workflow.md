@@ -1,8 +1,4 @@
----
-title: Studio Plugin Workflow
-layout: default
-nav_order: 3
----
+# Studio Plugin Workflow
 
 Install source: [NetRayCompilerPlugin on Creator Store](https://create.roblox.com/store/asset/100322227279356/NetRayCompilerPlugin)
 
@@ -16,6 +12,7 @@ The plugin widget includes:
 - Status line for compile/write feedback.
 
 ## Buttons
+
 ### Compile to ReplicatedStorage
 - Compiles current schema text locally (no HTTP).
 - Writes/updates `ModuleScript`s under `ReplicatedStorage/NetRay`:
@@ -40,7 +37,9 @@ The plugin widget includes:
 - Existing matching `ModuleScript`s are overwritten in place.
 
 ## Common Plugin Errors
-- `Schema is empty`: editor has no schema text.
-- `Compile failed: ...`: parser/analyzer/generator failure.
-- `Compiled, but write failed: ...`: compile succeeded but writing modules failed.
-- `Select exactly one Script or ModuleScript ...`: invalid selection count/type for **Load Selection**.
+| Error | Cause |
+| :--- | :--- |
+| `Schema is empty` | Editor has no schema text. |
+| `Compile failed: ...` | Parser/analyzer/generator failure. |
+| `Compiled, but write failed: ...` | Compile succeeded but writing modules failed. |
+| `Select exactly one Script...` | Invalid selection count/type for **Load Selection**. |

@@ -1,34 +1,40 @@
----
-title: FAQ
-layout: default
-nav_order: 11
----
+# FAQ
 
 ## Is there a CLI?
-Not yet. Current supported workflow is the Roblox Studio plugin only.
+No public standalone CLI is documented yet. The supported frontend in this repository is the Roblox Studio plugin workflow.
 
 ## Where are generated modules written?
-Always to `ReplicatedStorage/NetRay` with modules:
-- `Server`
-- `Client`
-- `Types`
+Studio plugin output path:
+- `ReplicatedStorage/NetRay/Server`
+- `ReplicatedStorage/NetRay/Client`
+- `ReplicatedStorage/NetRay/Types`
 
 ## Does `option remote_scope` control remote names?
-No in current frontend flow. Use the plugin scope textbox.  
-Remote names become `<Scope>_RELIABLE`, `<Scope>_UNRELIABLE`, and `<Scope>_FUNCTION`.
+Yes. The plugin compiler and `src/Compiler.luau` both honor `option remote_scope`.
+
+Remote names follow: `<Scope>_RELIABLE`, `<Scope>_UNRELIABLE`, `<Scope>_FUNCTION`.
 
 ## Can server send an event to one player directly?
-Generated event send API on server is `FireAll(...)` only. Per-player event send method is not currently emitted.
+Yes, generated server APIs include `Fire(player, ...)` when server send direction is allowed.
 
 ## Can I register multiple callbacks for one message?
-No. `On(...)` stores one active handler per message. Registering another replaces the previous one.
+It depends on `Call` mode:
+- `SingleSync` / `SingleAsync`: single active handler.
+- `ManySync` / `ManyAsync`: multiple handlers.
+- `Polling`: no callbacks; consume via `Iter()`.
 
-## Are enums fully supported?
-Enums are parsed but not emitted as serialization/runtime types.
+## Are enums supported?
+Yes.
+- Unit enums are emitted as Luau string-literal unions.
+- Tagged enums are emitted as tagged table unions and serialized on the wire.
+
+## What do `Call` and `Yield` modes do?
+- Event `Call` controls receive API shape (`On` single/multi vs `Iter` polling).
+- Function `Yield` currently supports only `SingleSync`.
 
 ## Why are callbacks receiving expanded struct fields?
-You are likely using `option DecodeStruct = Locals` (default).  
-Set `option DecodeStruct = Table` if you want full struct tables in callbacks.
+You are using `option DecodeStruct = Locals` (default).
+Use `option DecodeStruct = Table` to receive struct tables.
 
-## Why are dropped stats always zero?
-Current generated runtime initializes dropped counters but does not increment them.
+## Why are dropped stats often zero?
+The runtime exposes drop counters, but many schemas and workloads will not trigger queue drops under normal conditions.

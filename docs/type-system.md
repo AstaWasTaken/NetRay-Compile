@@ -1,91 +1,142 @@
----
-title: Type System
-layout: default
-nav_order: 5
----
+# Type System
 
 ## Primitive Types
-- `bool` / `boolean`
-- `u8`, `i8`
-- `u16`, `i16`
-- `u32`, `i32`
-- `f32`, `f64`
-- `string`
+NetRay supports standard primitive types for efficient binary serialization.
 
-Type aliases are normalized internally (`boolean` and `bool` both map to `bool`).
+- **Boolean:** `bool` / `boolean`
+- **Integer (Unsigned):** `u8`, `u16`, `u32`
+- **Integer (Signed):** `i8`, `i16`, `i32`
+- **Float:** `f16` (New), `f32`, `f64`
+- **String:** `string`
+- **Buffer:** `buffer`
+- **Roblox Types:**
+  - `vector`: defaults to `vector<f32>` (X/Y/Z)
+  - `cframe`: Position + YXZ Euler Angles (via `ToOrientation`)
+  - `color3`: RGB values quantized to u8 (0-255)
+  - `brickcolor`: u16 ID
+  - `datetime`: Unix timestamp (f64)
+  - `datetimemillis`: Unix timestamp millis (f64)
+- **Dynamic:** `unknown`
+
+::: info Type Normalization
+Type aliases are normalized internally. For example, `boolean` and `bool` are treated as identical. `vector3` is normalized to `vector`.
+:::
+
+::: warning Precision
+- **Color3** is quantized to 8-bit channels (0-255). Precision loss may occur.
+- **CFrame** is serialized using `ToOrientation()`. This handles rotations compactly but may introduce minor precision loss or gimbal lock near vertical orientations.
+:::
 
 ## Numeric Ranges
-Integer checks (when validation is active) use these ranges:
+When validation is enabled (`Validate` option), integers are checked against these ranges:
 
 | Type | Range |
-| --- | --- |
+| :--- | :--- |
 | `u8` | `0` to `255` |
 | `i8` | `-128` to `127` |
 | `u16` | `0` to `65535` |
-| `i16` | `-32768` to `32767` |
-| `u32` | `0` to `4294967295` |
-| `i32` | `-2147483648` to `2147483647` |
+| `i16` | `-32,768` to `32,767` |
+| `u32` | `0` to `4,294,967,295` |
+| `i32` | `-2,147,483,648` to `2,147,483,647` |
 
-Notes:
-- `f32` and `f64` are numeric but not integer-range checked.
-- `bool` is encoded as a tagged byte.
+**Notes:**
+- `f32` and `f64` are not range-checked (standard IEEE 754 behavior).
+- `bool` utilizes a single byte tag.
 
 ## String Bounds
-Supported forms:
-- `string`
-- `string<64>`
-- `string(64)`
-- `string(8, 64)` (upper bound is used)
+Strings can be bounded or unbounded.
 
-Declared max length must be `<= 65535`.
-Without declared max, runtime uses varint length prefixes (up to `4294967295`).
+- `string`: Unbounded (up to 4GB).
+- `string<64>`: Max 64 bytes.
+- `string(64)`: Alternative syntax for Max 64 bytes.
+- `string(8, 64)`: Alternative syntax with min/max bounds.
 
-## Optional
-```idl
+::: warning Size Limit
+Declared max length must be `<= 65535`. Without a declared max, the runtime uses varint length prefixes which support up to `4,294,967,295` bytes.
+:::
+
+## Container Types
+
+### Optional
+```rust
 optional u16
 optional string<32>
 optional array<u8, 32>
 ```
+- Carries a **1-byte presence tag**.
+- Tag `0`: `nil`.
+- Tag `1`: value follows.
 
-Encoding behavior:
-- Optional values carry a 1-byte presence tag.
-- Tag `0`: value is `nil`.
-- Tag `1`: value is present and encoded immediately after.
-
-## Array
-```idl
+### Array
+```rust
 array<u16>
 array<u16, 128>
 array<Pose, 50>
 ```
+- **Dynamic length list.**
+- Optional max bound (2nd arg).
+- Without declared max, uses varint count prefix.
+- **Optimization:** Boolean arrays are bit-packed.
 
-- Optional max bound syntax: second generic argument.
-- Declared max must be `<= 65535`.
-- Without declared max, runtime uses varint count prefixes (up to `4294967295`).
+### FixedArray
+```rust
+fixedarray<u16, 128>
+fixedarray<Pose, 50>
+u16[128] // Shorthand
+Pose[50] // Shorthand
+```
+- **Fixed length list.** Length is required.
+- **No length prefix** emitted in payload (saves bandwidth).
+- Boolean fixed arrays are bit-packed.
 
-Array notes:
-- Dense arrays are expected when full validation is enabled.
-- Boolean arrays may be packed in generated codecs for size efficiency.
-
-## Map
-```idl
+### Map
+```rust
 map<string<32>, u16>
 map<u16, Pose, 128>
+{[string<32>]: u16} // Shorthand
 ```
+- Key-Value store.
+- Optional max entry bound (3rd arg).
+- **Note:** Iteration order is undefined (Lua `next` behavior). Do not rely on wire order.
 
-- Optional max entry bound syntax: third generic argument.
-- Declared max must be `<= 65535`.
-- Without declared max, runtime uses varint count prefixes (up to `4294967295`).
 
-Map notes:
-- Maps are encoded by iterating `next(table, key)`.
-- Key iteration order in Lua tables is not stable, so map wire ordering is not guaranteed.
-- For deterministic results, prefer stable key spaces and avoid depending on insertion order.
+## Set
+```rust
+set Weapons {
+    Sword,
+    Bow,
+    Magic
+}
+```
+- Defines a set of unique flags/identifiers.
+- Emitted as a table of booleans: `export type Weapons = { Sword: boolean, Bow: boolean, Magic: boolean }`.
+- Efficiently bit-packed on the wire.
+
+## Tagged Enum (Sum Type)
+```rust
+enum Shape {
+    Circle { radius: f32 },
+    Rectangle { width: f32, height: f32 },
+    Point // Unit variant
+}
+```
+- Defines a type that can be one of several variants.
+- Emitted as a Luau type union.
+- **Wire Format:** 1-byte tag (or more for large enums) + variant payload.
+- **Usage:**
+  ```luau
+  -- Generated Type
+  export type Shape = 
+      | { Type: "Circle", radius: number }
+      | { Type: "Rectangle", width: number, height: number }
+      | { Type: "Point" }
+  ```
 
 ## Struct References
-Use struct names as field/parameter types:
 
-```idl
+You can use defined structs as field types.
+
+```rust
 struct Pose {
   x: f32,
   y: f32,
@@ -96,35 +147,33 @@ event Move {
 }
 ```
 
-When used in callbacks, struct parameters are affected by `DecodeStruct`:
-- `Locals`: struct fields may expand into individual callback arguments.
-- `Table`: struct is passed as one table argument.
+::: tip Locals vs Table
+If you use `option DecodeStruct = Locals;`, struct fields in callbacks will be unpacked as individual arguments instead of a single table.
+:::
 
 ## Passthrough
-Passthrough values bypass buffer serialization and travel as extra Remote arguments.
+Passthrough allows "any" type to bypass the binary serializer and be sent as a raw RemoteEvent argument.
 
-```idl
+```rust
 event Example {
   Data: (u16, passthrough Player),
 }
 ```
 
-Forms:
-- `passthrough` (treated as `any`)
-- `passthrough <TypeName>`
+- `passthrough`: Treated as `any`.
+- `passthrough <TypeName>`: Checked via `typeof` or `IsA` if validation is on.
 
-When validation is enabled (`Validate` not `Off`):
-- pass count must match schema.
-- values must be non-`nil`.
-- typed passthrough values are checked by `typeof` and `IsA`.
+::: warning Performance
+Passthrough values are **not** optimized by NetRay. They use standard Roblox serialization logic and cost.
+:::
 
-## Validation Modes and Type Safety
-- `Validate = Off`: minimal checks.
-- `Validate = Basic`: schema/bounds/tag checks.
-- `Validate = Full`: strongest runtime shape/type checks for values.
+## Validation Modes
+Configure via `option Validate = ...;`
 
-Use `Full` while developing schemas, then relax only if needed for performance.
+- **`Off`**: Minimal checks. High performance.
+- **`Basic`**: Schema bounds and tag checks.
+- **`Full`**: Strict shape and type checking for all values.
 
-## Current Non-Supported Type Targets
-- Enum values as serialization types are not emitted.
-- Unknown type names that are not declared structs will fail generation.
+::: tip Recommendation
+Use **`Full`** during development to catch bugs early. Switch to `Basic` or `Off` in production if profiling shows bottlenecks. `Off` is the default and recommended as it allows for maximum performance.
+:::

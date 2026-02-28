@@ -1,3 +1,17 @@
-# Ignore Jekyll build output
+# Docs build output and caches
 docs/_site/
 docs/.jekyll-cache/
+docs/.jekyll-metadata
+docs/.sass-cache/
+
+# VitePress output/cache
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+docs/.vitepress/.temp/
+
+# Docs dependency installs/logs
+docs/node_modules/
+docs/npm-debug.log*
+docs/yarn-debug.log*
+docs/yarn-error.log*
+docs/pnpm-debug.log*

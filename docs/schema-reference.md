@@ -1,38 +1,36 @@
----
-title: Schema Reference
-layout: default
-nav_order: 4
----
+# Schema Reference
 
 ## File-Level Declarations
-Schema supports:
-- `option`
-- `scope`
-- `struct`
-- `enum`
-- `event`
-- `function`
+Top-level declarations in an IDL file:
+- `option` - Configure compiler behavior.
+- `scope` - Namespace grouping.
+- `struct` - Define data structures.
+- `enum` - Define enums (unit or tagged).
+- `set` - Define packed boolean-flag sets.
+- `event` - Define network messages.
+- `function` - Define request/response RPCs.
 
 ## Comments
-Both comment styles are supported:
+Line comments are supported:
 
-```idl
-// single line comment
--- single line comment
+```rust
+// This is a comment
+-- This is also a comment
 ```
 
 ## Option Syntax
-```idl
+
+```rust
 option Validate = Full;
 option DecodeStruct = Table;
 ```
 
-Option values may be string, identifier/keyword, or number tokens.
+Option values may be strings, identifiers/keywords, or numbers.
 
 ## Scopes
-Scopes group declarations and support nesting.
+Scopes namespace messages and can nest arbitrarily.
 
-```idl
+```rust
 scope Gameplay {
   scope Vehicles {
     event Spawned { Data: u16 }
@@ -40,80 +38,97 @@ scope Gameplay {
 }
 ```
 
-Generated API paths follow scope nesting:
-- `Net.Gameplay.Vehicles.Spawned` on server/client modules.
+Generated path: `Net.Gameplay.Vehicles.Spawned`
 
-Scope rules:
-- You can nest scopes arbitrarily.
-- `struct`, `enum`, `event`, `function`, and `scope` are all allowed inside a scope.
-- Message IDs are assigned by declaration order while walking nested scopes.
-- IDs are global per category (reliable, unreliable, function), not per scope.
+::: tip Scope Rules
+- IDs are assigned by declaration order.
+- IDs are global per category (`Reliable`, `Unreliable`, `Function`), not per scope.
+:::
 
-## Scope and Name Resolution
-### Root API table
-Generated API root is always `Net`:
+## Name Resolution
+
+### Root API Table
+Generated APIs start at `Net`.
 
 ```luau
 Net.Gameplay.Vehicles.Spawned
 ```
 
-### Struct names are global
-Struct declarations are collected globally across the full schema tree.  
-Duplicate struct names (even in different scopes) cause `E_DUP_STRUCT`.
+### Global Type Names
+Struct/enum/set names must be unique across the full schema (not just within one scope).
 
-### Full message names
-Internally, messages are tracked with their full scoped name (for example `Net.Gameplay.Vehicles.Spawned`).  
-This affects generated symbol names and error context.
+Possible errors include `E_DUP_STRUCT`, `E_DUP_ENUM`, `E_DUP_SET`, and `E_DUP_DECL`.
 
 ## Structs
-Both field syntaxes are valid:
+Two field styles are supported.
 
-```idl
+```rust
 struct Car {
   id: u16,
   name: string<64>,
 }
 ```
 
-```idl
+```rust
 struct Car {
   u16 id;
   string<64> name;
 }
 ```
 
-Separators can be commas or semicolons. Trailing separators are accepted.
-
-Struct emission notes:
-- Structs are serialized field-by-field in declaration order.
-- Struct field order is wire-significant (reordering fields changes payload layout).
-- Referencing an unknown type name as a field/param will fail generation.
+::: info Layout Rules
+- Fields are serialized in declaration order.
+- Reordering fields changes wire format.
+:::
 
 ## Enums
-Enum declarations are parsed:
 
-```idl
+```rust
 enum Team {
   Red,
   Blue,
 }
 ```
 
-{: .warning }
-Enums are currently parser-level only and are not emitted as runtime serialization types.
+Emitted as Luau string-literal unions.
 
-## Events
-### Legacy Event Syntax
-```idl
-event reliable Position(u16 id, f32 x, f32 y);
-event unreliable Ping(u16 seq);
-event MatchStarted();
+## Sets
+
+```rust
+set Flags {
+  A,
+  B,
+  C
+}
 ```
 
-- Reliability prefix optional; default is `reliable`.
+Emitted as `{ A: boolean, B: boolean, C: boolean }` and encoded as packed bits.
 
-### Block Event Syntax
-```idl
+## Tagged Enums
+
+```rust
+enum Command {
+  Move { x: u16, y: u16 },
+  Stop,
+}
+```
+
+Default tag field is `Type`.
+
+```rust
+enum Command = "kind-type" {
+  Move { x: u16, y: u16 },
+  Stop,
+}
+```
+
+Custom tag fields can be identifiers or quoted strings.
+
+## Events
+
+### Block Syntax
+
+```rust
 event Position {
   From: Client,
   Type: Reliable,
@@ -122,26 +137,34 @@ event Position {
 }
 ```
 
-Supported keys:
-- `From`: `Client | Server | Both` (default `Both`).
-- `Type`: `Reliable | Unreliable` (default from event reliability, then `Reliable`).
-- `Call`: `SingleSync | ManySync | SingleAsync | ManyAsync | Polling` (default `ManySync`).
-- `Data`: either a single type (`Data: Pose`) or tuple (`Data: (u16, string<32>)`).
+| Key | Values | Default | Description |
+| :-- | :----- | :------ | :---------- |
+| `From` | `Client`, `Server`, `Both` | `Both` | Who sends this event. |
+| `Type` | `Reliable`, `Unreliable` | `Reliable` | Delivery channel. |
+| `Call` | `SingleSync`, `ManySync`, `SingleAsync`, `ManyAsync`, `Polling` | `ManySync` | Receive-side handler model. |
+| `Data` | Type or Tuple | - | Event payload. |
 
-Unknown keys trigger `E_EVENT_KEY`.
+`Call` behavior in current generator:
+- `SingleSync` / `SingleAsync`: single active `On` handler.
+- `ManySync` / `ManyAsync`: multiple active `On` handlers.
+- `Polling`: no `On`; generated API exposes `Iter()`.
 
-{: .note }
-Current generator behavior is driven by `From` and `Type`. `Call` is accepted/validated for schema compatibility but does not currently switch emitted transport logic.
+::: danger Unknown Keys
+Unknown block keys trigger `E_EVENT_KEY`.
+:::
 
-## Functions
-### Legacy Function Syntax
-```idl
-function GetState(u16 id) -> (bool active, string<32> mode);
-function Ping() -> ();
+### Legacy Syntax
+
+```rust
+event reliable Position(u16 id, f32 x, f32 y);
+event unreliable Ping(u16 seq);
 ```
 
-### Block Function Syntax
-```idl
+## Functions
+
+### Block Syntax
+
+```rust
 function GetState {
   Yield: SingleSync,
   Data: (u16),
@@ -149,22 +172,19 @@ function GetState {
 }
 ```
 
-Supported keys:
-- `Yield`: currently only `SingleSync` is accepted.
-- `Data`: request arguments.
-- `Return`: response values.
+| Key | Values | Default | Description |
+| :-- | :----- | :------ | :---------- |
+| `Yield` | `SingleSync` | `SingleSync` | Function mode (only `SingleSync` is currently valid). |
+| `Data` | Type or Tuple | - | Request args. |
+| `Return` | Type or Tuple | - | Response args. |
 
-Unknown keys trigger `E_FUNCTION_KEY`.
+### Legacy Syntax
 
-{: .note }
-Function transport is request/response via generated `Call`/`On` on both sides. `Yield` is currently schema metadata with `SingleSync` as the accepted value.
+```rust
+function GetState(u16 id) -> (bool active, string<32> mode);
+```
 
-## Separators and Trailing Tokens
-- `event`/`function` blocks may end with optional `;`.
-- Parameter/tuple lists allow trailing commas before `)`.
-- Struct fields allow comma or semicolon separators.
-
-## Declaration Ordering and Wire Compatibility
-- Changing event/function declaration order changes assigned message IDs.
-- Changing `Type` (Reliable/Unreliable) moves a message to a different ID space.
-- Renaming scopes/messages changes API paths (and generated symbol names), even when payload shape stays the same.
+## Syntax Rules
+- Struct fields and list items may use `,` or `;`.
+- Trailing separators are allowed.
+- Reordering `event`/`function` declarations changes message IDs and can break wire compatibility.

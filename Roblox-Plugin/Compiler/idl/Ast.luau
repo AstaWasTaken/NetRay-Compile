@@ -1,7 +1,6 @@
 --!strict
 -- Name: AST
 -- Purpose: AST type definitions for NetRay IDL
--- Generated-by: NetRay-Compiler (authored)
 
 export type Token = {
     kind: string,
@@ -12,9 +11,15 @@ export type Token = {
 
 export type Type = {
     kind: string,
-    value: Type?,
-    key: Type?,
+    name: string?,
+    value: any?,
+    key: any?,
+    min: number?,
     max: number?,
+    values: { string }?,
+    fields: { any }?,
+    variants: { any }?,
+    tag: string?,
 }
 
 export type Param = {
@@ -28,6 +33,13 @@ export type Struct = {
 }
 
 export type Enum = {
+    name: string,
+    values: { string }?,
+    tag: string?,
+    variants: { any }?,
+}
+
+export type Set = {
     name: string,
     values: { string },
 }
@@ -57,7 +69,7 @@ export type Option = {
     value: string,
 }
 
-export type Decl = Struct | Enum | Event | Function | Scope
+export type Decl = Struct | Enum | Set | Event | Function | Scope
 
 export type Schema = {
     options: { Option },

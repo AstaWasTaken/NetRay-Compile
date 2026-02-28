@@ -1,16 +1,12 @@
----
-title: Schema Examples
-layout: default
-nav_order: 10
----
+# Schema Examples
 
 ## Minimal Event
-```idl
+```rust
 event reliable Ping(u16 id);
 ```
 
 ## Block Event with Struct Payload
-```idl
+```rust
 struct PingData {
   id: u16,
   latency: u16,
@@ -25,7 +21,7 @@ event Ping {
 ```
 
 ## Tuple Payload Event
-```idl
+```rust
 event Position {
   From: Both,
   Type: Unreliable,
@@ -35,7 +31,7 @@ event Position {
 ```
 
 ## Function Request/Response
-```idl
+```rust
 function GetDealers {
   Yield: SingleSync,
   Data: (u16),
@@ -43,8 +39,18 @@ function GetDealers {
 }
 ```
 
+## Polling Receive Mode
+```rust
+event Snapshot {
+  From: Server,
+  Type: Unreliable,
+  Call: Polling,
+  Data: (u16, f32, f32),
+}
+```
+
 ## Nested Scopes
-```idl
+```rust
 scope Gameplay {
   scope Cars {
     event Spawned {
@@ -57,14 +63,14 @@ scope Gameplay {
 ```
 
 ## Options
-```idl
+```rust
 option Validate = Full;
 option TypeBranding = On;
 option DecodeStruct = Table;
 ```
 
 ## Passthrough Example
-```idl
+```rust
 function InspectPlayer {
   Data: (passthrough Player),
   Return: (string<32>),
@@ -72,7 +78,7 @@ function InspectPlayer {
 ```
 
 ## Full Example
-```idl
+```rust
 option Validate = Basic;
 
 scope Gameplay {
@@ -104,5 +110,30 @@ scope Gameplay {
     Data: (u16),
     Return: (u8, string<100>),
   }
+}
+```
+
+## Entities Example (Current `schemas/entities.idl`)
+```rust
+struct Entities {
+  brand: string,
+  carName: string,
+  carId: u16,
+  available: boolean,
+  dealers: u8,
+  price: f64
+}
+
+event MyEvent {
+  From: Client,
+  Type: Reliable,
+  Call: SingleSync,
+  Data: Entities
+}
+
+function Ping {
+  Yield: SingleSync,
+  Data: (f64),
+  Return: (f64),
 }
 ```

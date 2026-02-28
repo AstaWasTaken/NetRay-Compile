@@ -1,17 +1,14 @@
----
-title: Errors and Troubleshooting
-layout: default
-nav_order: 9
----
+# Errors and Troubleshooting
 
-## Parse/Schema Errors
-### Token/structure errors
+## Parse & Schema Errors
+
+### Token/Structure Errors
 - `Unexpected token at line:column`
 - `Unexpected token in scope`
 - `Expected event parameter list or event block`
 - `Expected function parameter list or function block`
 
-### Event/function key errors
+### Event/Function Key Errors
 - `E_EVENT_KEY`: unknown key in event block.
 - `E_EVENT_FROM`: invalid `From` value.
 - `E_EVENT_TYPE`: invalid `Type` value.
@@ -19,29 +16,39 @@ nav_order: 9
 - `E_FUNCTION_KEY`: unknown key in function block.
 - `E_UNSUPPORTED_YIELD`: function block `Yield` not supported (currently only `SingleSync`).
 
-### Analyzer/option errors
+### Analyzer/Option Errors
 - `E_DUP_STRUCT`: duplicate struct name.
+- `E_DUP_ENUM`: duplicate enum name.
+- `E_DUP_SET`: duplicate set name.
+- `E_DUP_DECL`: name collision between struct/enum/set declarations.
 - `Invalid Validate option value ...`
 - `Invalid TypeBranding option value ...`
 - `Invalid DecodeStruct option value ...`
 
 ## Runtime Error Codes
-Generated runtime uses short error strings:
-- `E_BOUNDS`: buffer read/write bounds violation.
-- `E_SCHEMA`: invalid payload schema/version/message shape.
-- `E_TAG`: invalid optional/boolean tag values.
-- `E_TYPE`: Lua type mismatch at runtime boundary.
-- `E_PASS`: passthrough argument validation failure.
+Generated runtime uses short error strings to save binary size & string constants:
+
+| Error | Meaning |
+| :--- | :--- |
+| `E_BOUNDS` | Buffer read/write bounds violation. |
+| `E_SCHEMA` | Invalid payload schema, version, or message shape. |
+| `E_TAG` | Invalid optional/boolean tag values. |
+| `E_TYPE` | Lua type mismatch at runtime boundary. |
+| `E_PASS` | Passthrough argument validation failure. |
 
 ## Plugin-Side Failures
-- `Schema is empty`: schema editor has no content.
-- `Compile failed: ...`: parser/analyzer/generator error.
-- `Compiled, but write failed: ...`: module write path failed.
-- Load Selection errors: invalid selection count or non-source object selected.
+| Error | Context |
+| :--- | :--- |
+| `Schema is empty` | Schema editor has no content. |
+| `Compile failed: ...` | Parser/analyzer/generator error. |
+| `Compiled, but write failed: ...` | Module write path failed (permissions/locked). |
+| `Select exactly one Script...` | Invalid selection count or non-source object selected. |
 
-## Quick Fixes
-1. Start with `option Validate = Full;` while authoring schema.
-2. Confirm `From` and call direction match your runtime usage.
-3. Keep schema names unique, especially structs.
-4. If callbacks receive unexpected params, check `DecodeStruct` option.
-5. If remotes fail on client, verify plugin scope name matches both ends.
+## Quick Troubleshooting
+::: tip Fixes
+1. **Validation**: Start with `option Validate = Full;` while authoring schema.
+2. **Direction**: Confirm `From` and call direction match your runtime usage.
+3. **Uniqueness**: Keep schema names unique, especially structs.
+4. **Callbacks**: If callbacks receive unexpected params, check `option DecodeStruct`.
+5. **Replication**: If remotes fail on client, verify plugin scope name matches server text.
+:::

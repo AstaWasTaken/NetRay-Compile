@@ -1,51 +1,56 @@
----
-title: Options
-layout: default
-nav_order: 6
----
+# Options
 
 ## Supported Options
+
 ### `Validate`
-```idl
+```rust
 option Validate = Off;   // default
 option Validate = Basic;
 option Validate = Full;
 ```
 
-Behavior:
-- `Off`: minimal validation.
-- `Basic`: schema/bounds/tag checks.
-- `Full`: includes stronger runtime type/shape checks.
+**Behavior:**
+- **`Off`**: Minimal validation.
+- **`Basic`**: Bounds and tag checks.
+- **`Full`**: Strict type/shape checks.
 
-Invalid value fails compile: `Invalid Validate option value ...`.
+::: danger Invalid Value
+Providing an invalid option value will cause a compilation error: `Invalid Validate option value ...`
+:::
 
 ### `TypeBranding`
-```idl
+```rust
 option TypeBranding = Off;  // default
 option TypeBranding = On;
 ```
 
-Behavior in generated `Types`:
-- `Off`: numeric aliases are plain `number`.
-- `On`: numeric aliases are branded Luau types (`Brand<number, "u16">`, etc).
+**Behavior in generated `Types`:**
+- **`Off`**: numeric aliases are plain `number`.
+- **`On`**: numeric aliases are branded Luau types (for example `Brand<number, "u16">`).
 
 ### `DecodeStruct`
-```idl
+```rust
 option DecodeStruct = Locals; // default
 option DecodeStruct = Table;
 ```
 
-Behavior for incoming callbacks (`On` handlers):
-- `Locals`: struct payload params are expanded to local callback args.
-- `Table`: struct payload params stay as table values.
+**Behavior for incoming callbacks (`On` handlers):**
+- **`Locals`**: struct payload params are expanded to callback args.
+- **`Table`**: struct payload params stay as a single table value.
 
-Example with `Data: Pose` where `Pose` has `x` and `y`:
-- `Locals` callback receives `data_x, data_y`.
-- `Table` callback receives `data`.
+**Example:**
+Given `struct Pose { x: f32, y: f32 }`:
+- `Locals` callback receives: `(x, y)`
+- `Table` callback receives: `({ x: ..., y: ... })`
+
+### `remote_scope`
+```rust
+option remote_scope = "Combat";
+```
+
+**Compiler behavior (plugin and `src/Compiler.luau`):**
+- Used as the generated remote name prefix.
+- Takes precedence over the fallback scope argument passed to `Compiler.compile(source, scope)`.
 
 ## Option Name Matching
-Option names are case-insensitive during resolution (`validate`, `Validate`, `VALIDATE` all work).
-
-## Important Frontend Note
-`option remote_scope = "..."` may appear in legacy schemas, but current compiler flow does not consume it.  
-Set remote scope using the plugin scope text box.
+Option names are case-insensitive (`validate`, `Validate`, `VALIDATE` all work).

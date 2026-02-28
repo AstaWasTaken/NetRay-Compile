@@ -1,49 +1,52 @@
----
-title: Runtime Model
-layout: default
-nav_order: 8
----
+# Runtime Model
 
 ## Transport Layout
 Generated runtime uses three remotes in `ReplicatedStorage`:
-- `<Scope>_RELIABLE` (`RemoteEvent`)
-- `<Scope>_UNRELIABLE` (`UnreliableRemoteEvent`)
-- `<Scope>_FUNCTION` (`RemoteFunction`)
 
-`<Scope>` comes from plugin scope text box (default `NetRay`).
+| Remote Name | Type | Purpose |
+| :--- | :--- | :--- |
+| `<Scope>_RELIABLE` | `RemoteEvent` | Reliable events. |
+| `<Scope>_UNRELIABLE` | `UnreliableRemoteEvent` | Unreliable events. |
+| `<Scope>_FUNCTION` | `RemoteFunction` | Request/response functions. |
 
-## Remote Lifecycle
-- Server runtime: finds or creates remotes.
-- Client runtime: waits for existing remotes.
-- If a remote exists with wrong class, server throws.
+`<Scope>` comes from compiler scope selection (for plugin: the Scope Name textbox).
+
+## Generated Module Layout
+The Studio plugin writes generated modules to:
+- `ReplicatedStorage/NetRay/Server`
+- `ReplicatedStorage/NetRay/Client`
+- `ReplicatedStorage/NetRay/Types`
+
+## Queue Buffering
+- Event payloads are queued in per-channel arenas.
+- Queues flush on `RunService.Heartbeat` and via `Net.StepReplication()`.
+- Runtime keeps reliable and unreliable queues separate.
 
 ## Message IDs
-IDs are assigned during analysis, independently per category:
-- Reliable events: 1..N
-- Unreliable events: 1..N
-- Functions: 1..N
+- IDs are 1-indexed per category.
+- Categories are independent: `Reliable`, `Unreliable`, `Function` each have their own counter.
+- ID width is auto-selected (`u8` when possible, otherwise `u16`).
 
-Message ID width auto-selects `u8` or `u16` based on max ID (hard max `65535`).
+::: warning Order Dependence
+IDs are declaration-order dependent. Reordering events/functions in a live protocol breaks compatibility.
+:::
 
-## Batching and Flush
-- Events are queued into arena buffers.
-- `StepReplication()` flushes reliable and unreliable queues.
-- `StepReplication()` is auto-connected to `RunService.Heartbeat`.
-- The method is also exposed on returned `Net` table.
+## Batching and Segmented Compaction
+Flush builds batched payloads and applies contiguous-run compaction for repeated message IDs.
 
-## Segmented Run Compaction
-Flush logic can compact contiguous runs of same message ID into a segment marker format when that is smaller.
+This reduces overhead while preserving event order.
 
-## Payload Versioning
-All payloads include a leading payload version byte.  
-Mismatched version is treated as schema error.
+## Remote Lifecycle
+- Server creates remotes if missing, or validates existing classes.
+- Client waits for remotes to replicate.
+- Class mismatches fail early to avoid silent protocol corruption.
 
 ## Stats
-Generated `Net.Stats` exposes:
-- `GetReliableDropped()`
-- `GetUnreliableDropped()`
-- `GetReliableQueueSize()`
-- `GetUnreliableQueueSize()`
+`Net.Stats` exposes queue and drop counters:
 
-{: .note }
-Current dropped counters are initialized but not incremented by emitted runtime, so dropped values remain `0` with current generator behavior.
+```luau
+print(Net.Stats.GetReliableQueueSize())
+print(Net.Stats.GetUnreliableDropped())
+```
+
+Dropped counters are available in the API and may remain low/zero depending on runtime pressure.

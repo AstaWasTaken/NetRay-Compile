@@ -47,18 +47,6 @@ IDL compiler for NetRay runtime modules.
 - All contributions welcome
 - Open a Pull request or open a issue
 
-### Local docs preview
-- Ensure you have ruby installed
-
-Run from `docs/`:
-
-```powershell
-bundle install
-bundle exec jekyll serve --config _config.yml,_config.local.yml
-```
-
-Then open `http://127.0.0.1:4000/`.
-
 ### Roblox Plugin
 - To contribute to the Plugin check [Roblox-Plugin/README.md](Roblox-Plugin/README.md)
 

@@ -1,40 +1,55 @@
 ---
-title: Home
-layout: default
-nav_order: 1
+layout: home
+
+hero:
+  name: "NetRay Compiler"
+  text: "Next-Gen Roblox Networking"
+  tagline: Generate type-safe, optimized networking code directly in Roblox Studio. Stop writing boilerplate. Start shipping features.
+  actions:
+    - theme: brand
+      text: Get Started
+      link: /getting-started
+    - theme: alt
+      text: View Schema Reference
+      link: /schema-reference
+    - theme: alt
+      text: View Changelog
+      link: /changelog
+  image:
+    src: /Vector.png
+    alt: NetRay Compiler Logo
+
+features:
+  - title: End-to-End Type Safety
+    details: Define your network protocol once in IDL. Get fully typed Luau code for both Client and Server instantly.
+  - title: High Performance
+    details: Optimized binary serialization and intelligent batching ensure minimal bandwidth and CPU usage.
+  - title: Studio Native
+    details: No external CLI required. The NetRay Compiler plugin integrates seamlessly into your Roblox Studio workflow.
 ---
 
-<div class="home-hero">
-  <p class="status-pill">Studio Plugin Available</p>
-  <h1>NetRay Compiler Documentation</h1>
-  <p>Compile NetRay IDL into generated <code>Server</code>, <code>Client</code>, and <code>Types</code> modules directly inside Roblox Studio.</p>
-</div>
+## Why NetRay?
 
-**External CLI status:** External CLI is not publicly available yet. Current supported user workflow is the Roblox Studio plugin.
+NetRay Compiler bridges the gap between complex networking requirements and developer experience. By using a specialized Interface Definition Language (IDL), it eliminates category errors and manual remote management.
 
-## What This Covers
-- Installing and running the Studio plugin.
-- Full NetRay IDL schema reference (legacy + block style).
-- Type system, options, and limits.
-- Generated API behavior on server and client.
-- Runtime model, remotes, error codes, and troubleshooting.
+### Key Capabilities
+- **Strict Schema Definitions**: Define events, functions, and structs in a clear, concise syntax.
+- **Automated Replication**: Changes flow automatically from your schema to your game code.
+- **Runtime Optimization**: Built-in support for reliable/unreliable channels, segmented batching, and order preservation.
+- **Modern Event Modes**: `Call` supports single-handler, multi-handler, and polling receive APIs.
 
-## Fast Links
-<div class="quick-grid">
-  <a class="quick-card" href="getting-started">Getting Started</a>
-  <a class="quick-card" href="studio-plugin-workflow">Studio Plugin Workflow</a>
-  <a class="quick-card" href="schema-reference">Schema Reference</a>
-  <a class="quick-card" href="type-system">Type System</a>
-  <a class="quick-card" href="options">Options</a>
-  <a class="quick-card" href="generated-api">Generated API</a>
-  <a class="quick-card" href="runtime-model">Runtime Model</a>
-  <a class="quick-card" href="errors-and-troubleshooting">Errors &amp; Troubleshooting</a>
-  <a class="quick-card" href="schema-examples">Schema Examples</a>
-  <a class="quick-card" href="faq">FAQ</a>
-</div>
+## Example Schema
 
-## Current Product Status
-- Supported frontend: Roblox Studio plugin.
-- Install plugin: [Creator Store](https://create.roblox.com/store/asset/100322227279356/NetRayCompilerPlugin).
-- Generated outputs: `ReplicatedStorage/NetRay/Server`, `ReplicatedStorage/NetRay/Client`, `ReplicatedStorage/NetRay/Types`.
-- External CLI: planned, not released.
+```rust
+struct PlayerData {
+    Health: u8,
+    Inventory: { u16 }
+}
+
+event PlayerAction {
+    From: Client,
+    Type: Reliable,
+    Call: SingleAsync,
+    Data: (Vector3, string)
+}
+```

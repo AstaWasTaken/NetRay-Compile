@@ -1,74 +1,67 @@
----
-title: Generated API
-layout: default
-nav_order: 7
----
+# Generated API
 
 ## Output Modules
-Plugin compile generates:
+The Studio plugin writes ModuleScripts to `ReplicatedStorage/NetRay`:
 - `ReplicatedStorage/NetRay/Server`
 - `ReplicatedStorage/NetRay/Client`
 - `ReplicatedStorage/NetRay/Types`
 
 ## Requiring Modules
-Server script:
 
 ```luau
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Net = require(ReplicatedStorage.NetRay.Server)
-```
-
-Client script:
-
-```luau
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Net = require(ReplicatedStorage.NetRay.Client)
-```
-
-Types:
-
-```luau
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local NetServer = require(ReplicatedStorage.NetRay.Server)
+local NetClient = require(ReplicatedStorage.NetRay.Client)
 local Types = require(ReplicatedStorage.NetRay.Types)
-type NetServer = typeof(Types.NetServer)
-type NetClient = typeof(Types.NetClient)
 ```
+
+## Exported Types
+`Types` exports:
+- `NetServer`, `NetClient`, `Net`
+- `NetStats`
+- `Connection`
+- Numeric aliases (`u8`, `i8`, `u16`, ...)
+- All schema `struct`, `enum`, `set`, and tagged enum types
 
 ## Event API Surface
-Event methods depend on `From`.
+Methods depend on `From` and runtime side.
 
-### `From: Client`
-- Client: `Fire(...)`
-- Server: `On(callback)`
+### Client side
+- Send allowed (`From: Client` or `Both`): `Fire(...)`
+- Receive allowed (`From: Server` or `Both`, `Call != Polling`): `On(callback)`
+- Receive allowed (`From: Server` or `Both`, `Call == Polling`): `Iter()`
 
-### `From: Server`
-- Server: `FireAll(...)`
-- Client: `On(callback)`
-
-### `From: Both`
-- Client: `Fire(...)`, `On(callback)`
-- Server: `FireAll(...)`, `On(callback)`
+### Server side
+- Send allowed (`From: Server` or `Both`): `Fire(player, ...)`
+- Send allowed (`From: Server` or `Both`): `FireAll(...)`
+- Send allowed (`From: Server` or `Both`): `FireList(players, ...)`
+- Send allowed (`From: Server` or `Both`): `FireExcept(excludedPlayer, ...)`
+- Receive allowed (`From: Client` or `Both`, `Call != Polling`): `On(callback)`
+- Receive allowed (`From: Client` or `Both`, `Call == Polling`): `Iter()`
 
 ## Function API Surface
 Functions generate on both sides:
-- `.On(callback)` for inbound request handling.
-- `.Call(...)` for outbound request/response.
+- `On(callback)` for inbound handling.
+- `Call(...)` for outbound request/response.
 
-Server `Call` signature includes `player: Player` as first arg.
+Server signatures include `player: Player` where direction requires it.
 
 ## Handler Model
-- `On` stores one active handler per message.
-- Registering a new handler replaces the previous one.
-- Returned `Connection:Disconnect()` clears the handler if token matches.
+Event handler behavior depends on `Call`:
+- `SingleSync` / `SingleAsync`: one active handler.
+- `ManySync` / `ManyAsync`: multiple active handlers.
+- `Polling`: buffered receive queue via `Iter()`.
+
+Function handlers are single-slot (`On` replaces previous handler).
 
 ## Return Value Conventions
-- Event `Fire`/`FireAll` returns `boolean` and returns `true` on successful enqueue.
-- Serialization/validation failures throw error codes instead of returning `false`.
+- Event `Fire*` methods return `boolean` (`true` on enqueue/send success).
+- Validation/serialization failures throw runtime error codes.
 
 ## Scope Mapping
 Nested schema scopes map to nested API tables:
 
-```idl
+```rust
 scope Gameplay {
   scope Cars {
     event Spawned { Data: u16 }
@@ -76,21 +69,14 @@ scope Gameplay {
 }
 ```
 
-Usage:
-
 ```luau
-Net.Gameplay.Cars.Spawned.Fire(15)
+Net.Gameplay.Cars.Spawned
 ```
 
-## Scope Design Tips
-- Use top-level scopes as game systems (`Combat`, `Inventory`, `Match`).
-- Nest by feature (`Inventory.Trade`, `Inventory.Crafting`) to keep call-sites obvious.
-- Avoid very deep chains unless needed; readability of `Net.A.B.C.D` can degrade quickly.
-
-## Struct Payload Shapes in API
+## Struct Payload Shapes
 Given:
 
-```idl
+```rust
 struct Pose {
   x: f32,
   y: f32,
@@ -102,8 +88,14 @@ event Move {
 }
 ```
 
-API shape:
 - Sender side: `Net.Move.Fire({ x = 10, y = 20 })`
-- Receiver side:
-  - with `DecodeStruct = Table`: callback gets one `data` table.
-  - with `DecodeStruct = Locals`: callback can receive expanded fields.
+- Receiver side with `DecodeStruct = Locals`: `On(function(x, y) ... end)`
+- Receiver side with `DecodeStruct = Table`: `On(function(pose) ... end)`
+
+## Runtime Loop and Stats
+- `Net.StepReplication()` flushes pending event queues.
+- Runtime also auto-flushes from `RunService.Heartbeat`.
+- `Net.Stats.GetReliableQueueSize()`
+- `Net.Stats.GetUnreliableQueueSize()`
+- `Net.Stats.GetReliableDropped()`
+- `Net.Stats.GetUnreliableDropped()`

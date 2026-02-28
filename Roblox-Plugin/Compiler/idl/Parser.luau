@@ -1,7 +1,6 @@
 --!strict
 -- Name: Parser
 -- Purpose: Parse NetRay IDL tokens into an AST
--- Generated-by: NetRay-Compiler (authored)
 
 local Ast = require(script.Parent.Ast)
 
@@ -16,9 +15,32 @@ local TYPE_ALIASES: { [string]: string } = {
     i16 = "i16",
     u32 = "u32",
     i32 = "i32",
+    f16 = "f16",
     f32 = "f32",
     f64 = "f64",
     string = "string",
+    buffer = "buffer",
+    vector = "vector",
+    vector3 = "vector",
+    cframe = "cframe",
+    brickcolor = "brickcolor",
+    color3 = "color3",
+    datetime = "datetime",
+    datetimemillis = "datetimemillis",
+    instance = "instance",
+    unknown = "unknown",
+}
+
+local NUMERIC_KINDS: { [string]: boolean } = {
+    u8 = true,
+    i8 = true,
+    u16 = true,
+    i16 = true,
+    u32 = true,
+    i32 = true,
+    f16 = true,
+    f32 = true,
+    f64 = true,
 }
 
 local RELIABILITY_ALIASES: { [string]: string } = {
@@ -82,6 +104,15 @@ local function parse(tokens: { Token }): Ast.Schema
         return ""
     end
 
+    local function expectNumber(): number
+        local token = expect("number", nil)
+        local parsed = tonumber(token.value)
+        if parsed == nil then
+            fail("Expected numeric literal", token)
+        end
+        return parsed :: number
+    end
+
     local function parseOptionValue(): string
         local token = tokens[index]
         if not token then
@@ -129,9 +160,117 @@ local function parse(tokens: { Token }): Ast.Schema
         error("E_EVENT_CALL")
     end
 
-    local parseType: () -> Ast.Type
+    local function acceptRangeDots(): boolean
+        local first = peek()
+        local second = peek(1)
+        if first and second and first.kind == "symbol" and second.kind == "symbol" and first.value == "." and second.value == "." then
+            index += 2
+            return true
+        end
+        return false
+    end
 
-    function parseType(): Ast.Type
+    local function parseBoundsInParens(): (number?, number?)
+        expect("symbol", "(")
+        local minBound: number? = nil
+        local maxBound: number? = nil
+        if acceptRangeDots() then
+            maxBound = expectNumber()
+        else
+            local first = expectNumber()
+            if acceptRangeDots() then
+                minBound = first
+                local nextToken = peek()
+                if nextToken and nextToken.kind == "number" then
+                    maxBound = expectNumber()
+                end
+            elseif accept("symbol", ",") then
+                minBound = first
+                maxBound = expectNumber()
+            else
+                minBound = first
+                maxBound = first
+            end
+        end
+        expect("symbol", ")")
+        return minBound, maxBound
+    end
+
+    local function parseBoundsInBrackets(): (boolean, number?, number?)
+        local minBound: number? = nil
+        local maxBound: number? = nil
+        local fixed = false
+        if acceptRangeDots() then
+            maxBound = expectNumber()
+        else
+            local first = expectNumber()
+            if acceptRangeDots() then
+                minBound = first
+                local nextToken = peek()
+                if nextToken and nextToken.kind == "number" then
+                    maxBound = expectNumber()
+                end
+            else
+                minBound = first
+                maxBound = first
+                fixed = true
+            end
+        end
+        expect("symbol", "]")
+        return fixed, minBound, maxBound
+    end
+
+    local parseType: () -> Ast.Type
+    local parseStructFields: () -> { Ast.Param }
+    local parseEnumValues: () -> { string }
+
+    function parseStructFields(): { Ast.Param }
+        local fields: { Ast.Param } = {}
+        while not accept("symbol", "}") do
+            local first = peek()
+            local second = peek(1)
+            if not first then
+                fail("Unexpected end while parsing struct", first)
+            end
+
+            local fieldName: string
+            local fieldType: Ast.Type
+
+            if second and second.kind == "symbol" and second.value == ":" and (first.kind == "identifier" or first.kind == "keyword") then
+                fieldName = expectIdentifierLike()
+                expect("symbol", ":")
+                fieldType = parseType()
+            else
+                fieldType = parseType()
+                fieldName = expectIdentifierLike()
+            end
+
+            fields[#fields + 1] = { name = fieldName, type = fieldType }
+            if not accept("symbol", ",") then
+                accept("symbol", ";")
+            end
+        end
+        return fields
+    end
+
+    function parseEnumValues(): { string }
+        local values: { string } = {}
+        if not accept("symbol", "}") then
+            while true do
+                values[#values + 1] = expectIdentifierLike()
+                if accept("symbol", "}") then
+                    break
+                end
+                expect("symbol", ",")
+                if accept("symbol", "}") then
+                    break
+                end
+            end
+        end
+        return values
+    end
+
+    local function parsePrimaryType(): Ast.Type
         local token = peek()
         if not token then
             fail("Unexpected end of tokens", token)
@@ -148,10 +287,20 @@ local function parse(tokens: { Token }): Ast.Schema
             local element = parseType()
             local max: number? = nil
             if accept("symbol", ",") then
-                max = tonumber(expect("number", nil).value)
+                max = expectNumber()
             end
             expect("symbol", ">")
             return { kind = "array", value = element, max = max }
+        end
+
+        if token.kind == "keyword" and token.value == "fixedarray" then
+            expect("keyword", "fixedarray")
+            expect("symbol", "<")
+            local element = parseType()
+            expect("symbol", ",")
+            local fixedLength = expectNumber()
+            expect("symbol", ">")
+            return { kind = "fixedarray", value = element, min = fixedLength, max = fixedLength }
         end
 
         if token.kind == "keyword" and token.value == "map" then
@@ -162,7 +311,7 @@ local function parse(tokens: { Token }): Ast.Schema
             local valueType = parseType()
             local max: number? = nil
             if accept("symbol", ",") then
-                max = tonumber(expect("number", nil).value)
+                max = expectNumber()
             end
             expect("symbol", ">")
             return { kind = "map", key = keyType, value = valueType, max = max }
@@ -178,30 +327,159 @@ local function parse(tokens: { Token }): Ast.Schema
             return { kind = "passthrough", value = "any" }
         end
 
+        local nextToken = peek(1)
+        if token.kind == "keyword" and token.value == "struct" and nextToken and nextToken.kind == "symbol" and nextToken.value == "{" then
+            expect("keyword", "struct")
+            expect("symbol", "{")
+            local fields = parseStructFields()
+            return { kind = "inline_struct", fields = fields }
+        end
+
+        nextToken = peek(1)
+        if token.kind == "keyword" and token.value == "enum" and nextToken and nextToken.kind == "symbol" and nextToken.value == "{" then
+            expect("keyword", "enum")
+            expect("symbol", "{")
+            local values = parseEnumValues()
+            return { kind = "enum_inline", values = values }
+        end
+
+        if token.kind == "symbol" and token.value == "{" then
+            expect("symbol", "{")
+            expect("symbol", "[")
+            local keyType = parseType()
+            expect("symbol", "]")
+            expect("symbol", ":")
+            local valueType = parseType()
+            expect("symbol", "}")
+            return { kind = "map", key = keyType, value = valueType }
+        end
+
         if token.kind == "identifier" or token.kind == "keyword" then
             local name = normalizeTypeName(expectIdentifierLike())
-            if name == "string" then
+
+            if name == "string" or name == "buffer" then
+                local minBound: number? = nil
+                local maxBound: number? = nil
                 if accept("symbol", "<") then
-                    local max = tonumber(expect("number", nil).value)
+                    maxBound = expectNumber()
                     expect("symbol", ">")
-                    return { kind = "string", max = max }
-                end
-                if accept("symbol", "(") then
-                    local firstBound = tonumber(expect("number", nil).value)
-                    local maxBound = firstBound
-                    if accept("symbol", ",") then
-                        maxBound = tonumber(expect("number", nil).value)
+                else
+                    local openToken = peek()
+                    if openToken and openToken.kind == "symbol" and openToken.value == "(" then
+                        minBound, maxBound = parseBoundsInParens()
                     end
-                    expect("symbol", ")")
-                    return { kind = "string", max = maxBound }
                 end
-                return { kind = "string" }
+                return {
+                    kind = name,
+                    min = minBound,
+                    max = maxBound,
+                }
             end
+
+            if name == "unknown" then
+                return { kind = "passthrough", value = "any" }
+            end
+
+            if name == "instance" then
+                if accept("symbol", "(") then
+                    local className = expectIdentifierLike()
+                    expect("symbol", ")")
+                    return { kind = "passthrough", value = className }
+                end
+                return { kind = "passthrough", value = "Instance" }
+            end
+
+            if name == "vector" then
+                local componentType: Ast.Type? = nil
+                if accept("symbol", "<") then
+                    componentType = parseType()
+                    expect("symbol", ">")
+                end
+                local minBound: number? = nil
+                local maxBound: number? = nil
+                local openToken = peek()
+                if openToken and openToken.kind == "symbol" and openToken.value == "(" then
+                    minBound, maxBound = parseBoundsInParens()
+                end
+                return {
+                    kind = "vector",
+                    value = componentType,
+                    min = minBound,
+                    max = maxBound,
+                }
+            end
+
+            if name == "cframe" then
+                local posType: Ast.Type? = nil
+                local rotType: Ast.Type? = nil
+                if accept("symbol", "<") then
+                    posType = parseType()
+                    if accept("symbol", ",") then
+                        rotType = parseType()
+                    else
+                        rotType = posType
+                    end
+                    expect("symbol", ">")
+                end
+                return {
+                    kind = "cframe",
+                    value = posType,
+                    key = rotType,
+                }
+            end
+
+            if NUMERIC_KINDS[name] then
+                local minBound: number? = nil
+                local maxBound: number? = nil
+                local openToken = peek()
+                if openToken and openToken.kind == "symbol" and openToken.value == "(" then
+                    minBound, maxBound = parseBoundsInParens()
+                end
+                return {
+                    kind = name,
+                    min = minBound,
+                    max = maxBound,
+                }
+            end
+
             return { kind = name }
         end
 
         fail("Unexpected type token", token)
         return { kind = "invalid" }
+    end
+
+    function parseType(): Ast.Type
+        local typeDef = parsePrimaryType()
+        while true do
+            if accept("symbol", "?") then
+                typeDef = { kind = "optional", value = typeDef }
+            elseif accept("symbol", "[") then
+                if accept("symbol", "]") then
+                    typeDef = { kind = "array", value = typeDef }
+                else
+                    local fixed, minBound, maxBound = parseBoundsInBrackets()
+                    if fixed then
+                        typeDef = {
+                            kind = "fixedarray",
+                            value = typeDef,
+                            min = minBound,
+                            max = maxBound,
+                        }
+                    else
+                        typeDef = {
+                            kind = "array",
+                            value = typeDef,
+                            min = minBound,
+                            max = maxBound,
+                        }
+                    end
+                end
+            else
+                break
+            end
+        end
+        return typeDef
     end
 
     local function parseLegacyParams(): { Ast.Param }
@@ -267,38 +545,107 @@ local function parse(tokens: { Token }): Ast.Schema
 
     local function parseStruct(name: string): Ast.Struct
         expect("symbol", "{")
-        local fields: { Ast.Param } = {}
-
-        while not accept("symbol", "}") do
-            local first = peek()
-            local second = peek(1)
-            if not first then
-                fail("Unexpected end while parsing struct", first)
-            end
-
-            local fieldName: string
-            local fieldType: Ast.Type
-
-            if second and second.kind == "symbol" and second.value == ":" and (first.kind == "identifier" or first.kind == "keyword") then
-                fieldName = expectIdentifierLike()
-                expect("symbol", ":")
-                fieldType = parseType()
-            else
-                fieldType = parseType()
-                fieldName = expectIdentifierLike()
-            end
-
-            fields[#fields + 1] = { name = fieldName, type = fieldType }
-            consumeOptionalSeparator()
-        end
-
+        local fields = parseStructFields()
         return { name = name, fields = fields }
     end
 
+    local function enumBodyHasTaggedVariants(): boolean
+        local cursor = index
+        local depth = 0
+        while true do
+            local token = tokens[cursor]
+            if token == nil then
+                fail("Unexpected end while parsing enum", token)
+            end
+
+            if depth == 0 and token.kind == "symbol" and token.value == "}" then
+                return false
+            end
+
+            if depth == 0 and (token.kind == "identifier" or token.kind == "keyword") then
+                local nextToken = tokens[cursor + 1]
+                if nextToken and nextToken.kind == "symbol" and nextToken.value == "{" then
+                    return true
+                end
+            end
+
+            if token.kind == "symbol" then
+                if token.value == "{" then
+                    depth += 1
+                elseif token.value == "}" then
+                    depth -= 1
+                end
+            end
+
+            cursor += 1
+        end
+    end
+
     local function parseEnum(name: string): Ast.Enum
+        local tagField: string? = nil
+        if accept("symbol", "=") then
+            local tagToken = peek()
+            if not tagToken then
+                fail("Expected enum assignment value", tagToken)
+            end
+            if tagToken.kind == "symbol" and tagToken.value == "{" then
+                -- unit enum assignment style: enum Name = { A, B }
+            elseif tagToken.kind == "string" then
+                tagField = expect("string", nil).value
+            elseif tagToken.kind == "identifier" or tagToken.kind == "keyword" then
+                tagField = expectIdentifierLike()
+            else
+                fail("Expected enum assignment value", tagToken)
+            end
+        end
+
+        expect("symbol", "{")
+        local parseAsTaggedEnum = tagField ~= nil or enumBodyHasTaggedVariants()
+        if not parseAsTaggedEnum then
+            local values = parseEnumValues()
+            return {
+                declKind = "enum",
+                name = name,
+                values = values,
+            }
+        end
+
+        local variants: { any } = {}
+        if not accept("symbol", "}") then
+            while true do
+                local variantName = expectIdentifierLike()
+                local fields: { Ast.Param } = {}
+                if accept("symbol", "{") then
+                    fields = parseStructFields()
+                end
+                variants[#variants + 1] = {
+                    name = variantName,
+                    fields = fields,
+                }
+                if accept("symbol", "}") then
+                    break
+                end
+                expect("symbol", ",")
+                if accept("symbol", "}") then
+                    break
+                end
+            end
+        end
+
+        return {
+            declKind = "enum",
+            name = name,
+            tag = tagField,
+            variants = variants,
+        }
+    end
+
+    local function parseSet(name: string): Ast.Set
+        if accept("symbol", "=") then
+            -- optional assignment style: set Name = { ... }
+        end
         expect("symbol", "{")
         local values: { string } = {}
-
         if not accept("symbol", "}") then
             while true do
                 values[#values + 1] = expectIdentifierLike()
@@ -311,8 +658,11 @@ local function parse(tokens: { Token }): Ast.Schema
                 end
             end
         end
-
-        return { name = name, values = values }
+        return {
+            declKind = "set",
+            name = name,
+            values = values,
+        }
     end
 
     local function parseBlinkEvent(name: string, defaultReliability: string): Ast.Event
@@ -483,6 +833,10 @@ local function parse(tokens: { Token }): Ast.Schema
                 expect("keyword", "enum")
                 local enumName = expect("identifier", nil).value
                 decls[#decls + 1] = parseEnum(enumName)
+            elseif token.kind == "keyword" and token.value == "set" then
+                expect("keyword", "set")
+                local setName = expect("identifier", nil).value
+                decls[#decls + 1] = parseSet(setName)
             elseif token.kind == "keyword" and token.value == "scope" then
                 decls[#decls + 1] = parseScope()
             else
@@ -522,6 +876,10 @@ local function parse(tokens: { Token }): Ast.Schema
             expect("keyword", "enum")
             local enumName = expect("identifier", nil).value
             decls[#decls + 1] = parseEnum(enumName)
+        elseif token.kind == "keyword" and token.value == "set" then
+            expect("keyword", "set")
+            local setName = expect("identifier", nil).value
+            decls[#decls + 1] = parseSet(setName)
         elseif token.kind == "keyword" and token.value == "event" then
             decls[#decls + 1] = parseEvent()
         elseif token.kind == "keyword" and token.value == "function" then

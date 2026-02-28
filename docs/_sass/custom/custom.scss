@@ -28,7 +28,7 @@
 }
 
 html {
-  font-size: clamp(15px, calc(0.45vw + 13.4px), 17px);
+  font-size: clamp(15px, 0.45vw + 13.4px, 17px);
 }
 
 html,
@@ -108,22 +108,27 @@ a {
 }
 
 .site-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-height: auto;
+  padding: 0.62rem 0.78rem;
   border-bottom: 1px solid rgba(191, 234, 255, 0.22);
   background: rgba(8, 18, 28, 0.38);
 }
 
 .site-title {
-  text-transform: none;
-  letter-spacing: 0.015em;
-  font-size: clamp(0.96rem, calc(0.8rem + 0.45vw), 1.18rem) !important;
-  font-weight: 600;
-  line-height: 1.18;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: none !important;
+}
+
+.site-logo {
+  display: none !important;
 }
 
 .site-button {
+  flex: 0 0 auto;
+  margin-left: auto;
   border: 1px solid rgba(169, 220, 251, 0.4);
   border-radius: 10px;
 }
@@ -284,7 +289,7 @@ a {
 
 .main-content p,
 .main-content li {
-  font-size: clamp(0.95rem, calc(0.22vw + 0.9rem), 1.02rem);
+  font-size: clamp(0.95rem, 0.22vw + 0.9rem, 1.02rem);
   color: var(--nr-text);
 }
 

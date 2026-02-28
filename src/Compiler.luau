@@ -1,7 +1,6 @@
 --!strict
 -- Name: Compiler
 -- Purpose: Entry point for compiling NetRay IDL into runtime modules
--- Generated-by: NetRay-Compiler (authored)
 
 local Lexer = require("./idl/Lexer")
 local Parser = require("./idl/Parser")
@@ -34,10 +33,24 @@ local function verifyForbidden(code: string, label: string)
 	end
 end
 
+local function resolveRemoteScope(ast: any, fallback: string): string
+	local options = ast.options
+	if type(options) ~= "table" then
+		return fallback
+	end
+	for index = 1, #options do
+		local option = options[index]
+		if string.lower(option.name) == "remote_scope" then
+			return tostring(option.value)
+		end
+	end
+	return fallback
+end
+
 local function compile(idlText: string, remoteScope: string?): CompileResult
-	local scopeName = remoteScope or "NetRay"
 	local tokens = Lexer.lex(idlText)
 	local ast = Parser.parse(tokens)
+	local scopeName = resolveRemoteScope(ast, remoteScope or "NetRay")
 	local analyzed = Analyzer.analyze(ast, scopeName)
 	local generated = Generator.generate(analyzed)
 	verifyForbidden(generated.server, "Server.luau")

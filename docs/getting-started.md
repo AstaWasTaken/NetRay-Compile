@@ -1,40 +1,49 @@
----
-title: Getting Started
-layout: default
-nav_order: 2
----
+# Getting Started
 
-## Install the Plugin
-Use the official Creator Store listing:
+## Installation
 
-- [NetRayCompilerPlugin on Roblox Creator Store](https://create.roblox.com/store/asset/100322227279356/NetRayCompilerPlugin)
+1. **Get the Plugin**
 
-In Studio:
-1. Open the link above.
-2. Click **Get**.
-3. Restart Studio if it is already open.
+   Open the [NetRay Compiler Plugin](https://create.roblox.com/store/asset/100322227279356/NetRayCompilerPlugin) on the Roblox Creator Store and click **Get**.
 
-## Open the Plugin in Studio
-1. Start Roblox Studio.
-2. Open the **NetRay** toolbar.
-3. Click **NetRayCompiler**.
+2. **Open in Studio**
 
-## First Compile
-1. Enter a remote scope name (for example `NetRay`).  (Optional)
-2. Paste IDL into the editor.
+   Launch Roblox Studio, open the **Plugins** tab, and look for the **NetRay** toolbar.
+
+3. **Launch Interface**
+
+   Click the **NetRayCompiler** button to open the compiler interface window.
+
+## Your First Schema
+
+1. In the **Scope Name** field, enter a name for your network definition (e.g., `NetRay`). -- Can be left empty.
+2. Paste the following example into the editor:
+
+    ```rust
+    // A simple reliable event
+    event reliable Greet {
+        From: Client,
+        Data: string,
+    }
+    ```
+
 3. Click **Compile to ReplicatedStorage**.
 
-On success, the plugin writes:
+::: tip Generated Assets
+If successful, the plugin creates a folder structure in `ReplicatedStorage`:
 - `ReplicatedStorage/NetRay/Server`
 - `ReplicatedStorage/NetRay/Client`
 - `ReplicatedStorage/NetRay/Types`
+:::
 
-## Scope Name and Remote Names
-If scope is `Combat`, generated remotes are:
+## Understanding Scopes
+
+The **Scope Name** you enter (e.g., `Combat`) determines the names of the underlying RemoteEvents:
 - `Combat_RELIABLE`
 - `Combat_UNRELIABLE`
 - `Combat_FUNCTION`
 
-## Important
-{: .warning }
-`option remote_scope = "...";` in schema text is currently not used by the compiler frontend. Use the plugin scope text box instead.
+## Next Steps
+
+- Learn the full [IDL Syntax](/schema-reference).
+- see how to use the generated code in the [Using Generated API](/generated-api) guide.

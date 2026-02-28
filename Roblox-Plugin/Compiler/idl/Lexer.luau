@@ -1,7 +1,6 @@
 --!strict
 -- Name: Lexer
 -- Purpose: Tokenize NetRay IDL input
--- Generated-by: NetRay-Compiler (authored)
 
 export type Token = {
     kind: string,
@@ -15,10 +14,12 @@ local KEYWORDS = {
     scope = true,
     struct = true,
     enum = true,
+    set = true,
     event = true,
     ["function"] = true,
     optional = true,
     array = true,
+    fixedarray = true,
     map = true,
     passthrough = true,
     unreliable = true,

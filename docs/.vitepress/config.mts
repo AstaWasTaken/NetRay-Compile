@@ -2,9 +2,9 @@ import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-    title: "NetRay Compiler",
+    title: "NetRay Compile",
     description: "Documentation for the NetRay IDL compiler Studio plugin",
-    base: "/NetRay-Compiler/", // Important for GitHub Pages deployment
+    base: "/NetRay-Compile/", // Important for GitHub Pages deployment
     themeConfig: {
         siteTitle: false,
         logo: '/Vector.png',

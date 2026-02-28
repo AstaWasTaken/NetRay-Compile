@@ -1,7 +1,6 @@
 --!strict
 -- Name: NetRayCompilerPlugin
 -- Purpose: Studio plugin UI for local NetRay IDL compilation
--- Generated-by: NetRay-Compiler (authored)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Selection = game:GetService("Selection")

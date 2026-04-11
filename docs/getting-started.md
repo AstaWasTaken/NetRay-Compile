@@ -1,6 +1,14 @@
 # Getting Started
 
+## Choose a Frontend
+
+NetRay Compiler currently supports two frontend workflows:
+- **Studio Plugin** for in-Studio compilation into `ReplicatedStorage`
+- **Standalone CLI** for filesystem-based generation through Rokit
+
 ## Installation
+
+### Option 1: Studio Plugin
 
 1. **Get the Plugin**
 
@@ -13,6 +21,27 @@
 3. **Launch Interface**
 
    Click the **NetRayCompiler** button to open the compiler interface window.
+
+### Option 2: Standalone CLI
+
+1. **Install with Rokit**
+
+   ```sh
+   rokit add AstaWasTaken/NetRay-Compile@<version> netray
+   ```
+
+2. **Compile a schema**
+
+   ```sh
+   netray compile path/to/schema.idl --out-dir generated --scope NetRay
+   ```
+
+3. **Use the generated modules**
+
+   The CLI writes:
+   - `generated/Server.luau`
+   - `generated/Client.luau`
+   - `generated/Types.luau`
 
 ## Your First Schema
 
@@ -45,5 +74,6 @@ The **Scope Name** you enter (e.g., `Combat`) determines the names of the underl
 
 ## Next Steps
 
+- Learn the standalone [CLI Workflow](/cli-workflow).
 - Learn the full [IDL Syntax](/schema-reference).
 - see how to use the generated code in the [Using Generated API](/generated-api) guide.

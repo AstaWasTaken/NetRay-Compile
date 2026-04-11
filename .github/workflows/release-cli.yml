@@ -1,0 +1,76 @@
+name: Release NetRay CLI
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+
+  build-and-upload:
+    needs: create-release
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            launcher_name: NetRay-Compile.exe
+            asset_name: NetRay-Compile-windows-x86_64.zip
+          - runner: ubuntu-latest
+            launcher_name: NetRay-Compile
+            asset_name: NetRay-Compile-linux-x86_64.zip
+          - runner: macos-13
+            launcher_name: NetRay-Compile
+            asset_name: NetRay-Compile-macos-x86_64.zip
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rokit on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-RestMethod https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.ps1 | Invoke-Expression
+          "$env:USERPROFILE\.rokit\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install Rokit on macOS/Linux
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          curl -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash
+          echo "$HOME/.rokit/bin" >> "$GITHUB_PATH"
+
+      - name: Install project tools
+        shell: pwsh
+        run: |
+          rokit trust lune-org/lune rojo-rbx/rojo
+          rokit install
+
+      - name: Package Windows launcher
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File scripts\package-windows-cli.ps1 -OutputDir dist -LauncherName "${{ matrix.launcher_name }}" -AssetName "${{ matrix.asset_name }}"
+
+      - name: Package macOS/Linux launcher
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          bash scripts/package-unix-cli.sh dist "${{ matrix.launcher_name }}" "${{ matrix.asset_name }}"
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ matrix.asset_name }}

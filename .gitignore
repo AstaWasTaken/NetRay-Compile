@@ -15,3 +15,6 @@ docs/npm-debug.log*
 docs/yarn-debug.log*
 docs/yarn-error.log*
 docs/pnpm-debug.log*
+
+# Local CLI build/test output
+dist/

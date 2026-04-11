@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress'
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
     title: "NetRay Compile",
-    description: "Documentation for the NetRay IDL compiler Studio plugin",
+    description: "Documentation for the NetRay IDL compiler plugin and standalone CLI",
     base: "/NetRay-Compile/", // Important for GitHub Pages deployment
     themeConfig: {
         siteTitle: false,
@@ -12,6 +12,7 @@ export default defineConfig({
         nav: [
             { text: 'Home', link: '/' },
             { text: 'Getting Started', link: '/getting-started' },
+            { text: 'CLI', link: '/cli-workflow' },
             { text: 'Reference', link: '/schema-reference' },
             { text: 'Changelog', link: '/changelog' }
         ],
@@ -34,6 +35,7 @@ export default defineConfig({
             {
                 text: 'Workflow',
                 items: [
+                    { text: 'CLI', link: '/cli-workflow' },
                     { text: 'Studio Plugin', link: '/studio-plugin-workflow' },
                     { text: 'Using Generated API', link: '/generated-api' }
                 ]
@@ -56,11 +58,11 @@ export default defineConfig({
         ],
 
         socialLinks: [
-            { icon: 'github', link: 'https://github.com/AstaWasTaken/NetRay-Compiler' }
+            { icon: 'github', link: 'https://github.com/AstaWasTaken/NetRay-Compile' }
         ],
 
         footer: {
-            message: 'NetRay Compiler docs. Current supported frontend: Roblox Studio plugin.',
+            message: 'NetRay Compiler docs. Supported frontends: Roblox Studio plugin and standalone CLI.',
             copyright: 'Copyright © 2024-present'
         }
     }

@@ -9,8 +9,20 @@ IDL compiler for NetRay runtime modules.
 
 ## Current Frontend Availability
 - Supported: Roblox Studio plugin.
+- Supported: standalone CLI packaged with the Lune runtime.
 - Install plugin: [Creator Store](https://create.roblox.com/store/asset/100322227279356/NetRayCompilerPlugin).
-- Not yet public: external CLI frontend.
+- Install CLI with Rokit: `rokit add AstaWasTaken/NetRay-Compile@<version> netray`
+
+## CLI Quick Start
+```sh
+rokit add AstaWasTaken/NetRay-Compile@<version> netray
+netray compile path/to/schema.idl --out-dir generated --scope NetRay
+```
+
+Successful CLI output writes:
+- `generated/Server.luau`
+- `generated/Client.luau`
+- `generated/Types.luau`
 
 ## IDL Syntax Support
 - Legacy NetRay syntax stays supported:

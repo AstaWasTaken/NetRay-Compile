@@ -1,0 +1,8 @@
+option remote_scope = "Foo";
+
+event Ping {
+	From: Client,
+	Type: Reliable,
+	Call: ManySync,
+	Data: string,
+}

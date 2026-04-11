@@ -1,7 +1,19 @@
 # FAQ
 
 ## Is there a CLI?
-No public standalone CLI is documented yet. The supported frontend in this repository is the Roblox Studio plugin workflow.
+Yes.
+
+Install it with Rokit:
+
+```sh
+rokit add AstaWasTaken/NetRay-Compile@<version> netray
+```
+
+Run it with:
+
+```sh
+netray compile path/to/schema.idl --out-dir generated --scope NetRay
+```
 
 ## Where are generated modules written?
 Studio plugin output path:

@@ -4,17 +4,17 @@ layout: home
 hero:
   name: "NetRay Compiler"
   text: "Next-Gen Roblox Networking"
-  tagline: Generate type-safe, optimized networking code directly in Roblox Studio. Stop writing boilerplate. Start shipping features.
+  tagline: Generate type-safe, optimized networking code through the Studio plugin or a standalone CLI. Stop writing boilerplate. Start shipping features.
   actions:
     - theme: brand
       text: Get Started
       link: /getting-started
     - theme: alt
+      text: CLI Workflow
+      link: /cli-workflow
+    - theme: alt
       text: View Schema Reference
       link: /schema-reference
-    - theme: alt
-      text: View Changelog
-      link: /changelog
   image:
     src: /Vector.png
     alt: NetRay Compiler Logo
@@ -24,8 +24,8 @@ features:
     details: Define your network protocol once in IDL. Get fully typed Luau code for both Client and Server instantly.
   - title: High Performance
     details: Optimized binary serialization and intelligent batching ensure minimal bandwidth and CPU usage.
-  - title: Studio Native
-    details: No external CLI required. The NetRay Compiler plugin integrates seamlessly into your Roblox Studio workflow.
+  - title: Plugin + CLI
+    details: Use the same compiler core inside Roblox Studio or from a standalone CLI installed through Rokit.
 ---
 
 ## Why NetRay?

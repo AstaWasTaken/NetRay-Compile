@@ -16,6 +16,7 @@ The Studio plugin writes generated modules to:
 - `ReplicatedStorage/NetRay/Server`
 - `ReplicatedStorage/NetRay/Client`
 - `ReplicatedStorage/NetRay/Types`
+- `ReplicatedStorage/NetRay/Schema`
 
 ## Queue Buffering
 - Event payloads are queued in per-channel arenas.

@@ -63,6 +63,7 @@ If successful, the plugin creates a folder structure in `ReplicatedStorage`:
 - `ReplicatedStorage/NetRay/Server`
 - `ReplicatedStorage/NetRay/Client`
 - `ReplicatedStorage/NetRay/Types`
+- `ReplicatedStorage/NetRay/Schema`
 :::
 
 ## Understanding Scopes
@@ -72,6 +73,29 @@ The **Scope Name** you enter (e.g., `Combat`) determines the names of the underl
 - `Combat_UNRELIABLE`
 - `Combat_FUNCTION`
 
+## Example Server Script
+
+```luau
+-- Server
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local NetServer = require(ReplicatedStorage.NetRay.Server)
+
+NetServer.Ping.FireAll(os.clock())
+
+```
+
+## Example Client Script
+
+```luau
+-- Client
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local NetClient = require(ReplicatedStorage.NetRay.Client)
+
+NetClient.Ping.On(function(ServerClock)
+   Print("Ping: "..os.clock() - ServerClock)
+end)
+
+```
 ## Next Steps
 
 - Learn the standalone [CLI Workflow](/cli-workflow).

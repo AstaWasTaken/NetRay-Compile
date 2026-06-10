@@ -5,6 +5,7 @@ The Studio plugin writes ModuleScripts to `ReplicatedStorage/NetRay`:
 - `ReplicatedStorage/NetRay/Server`
 - `ReplicatedStorage/NetRay/Client`
 - `ReplicatedStorage/NetRay/Types`
+- `ReplicatedStorage/NetRay/Schema`
 
 ## Requiring Modules
 
@@ -14,6 +15,8 @@ local NetServer = require(ReplicatedStorage.NetRay.Server)
 local NetClient = require(ReplicatedStorage.NetRay.Client)
 local Types = require(ReplicatedStorage.NetRay.Types)
 ```
+
+`Schema` is a commented reference copy of the schema text used for the compile when using the Roblox Plugin.
 
 ## Exported Types
 `Types` exports:

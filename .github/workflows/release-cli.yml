@@ -30,7 +30,7 @@ jobs:
           - runner: ubuntu-latest
             launcher_name: NetRay-Compile
             asset_name: NetRay-Compile-linux-x86_64.zip
-          - runner: macos-13
+          - runner: macos-15-intel
             launcher_name: NetRay-Compile
             asset_name: NetRay-Compile-macos-x86_64.zip
 

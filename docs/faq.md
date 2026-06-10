@@ -20,6 +20,7 @@ Studio plugin output path:
 - `ReplicatedStorage/NetRay/Server`
 - `ReplicatedStorage/NetRay/Client`
 - `ReplicatedStorage/NetRay/Types`
+- `ReplicatedStorage/NetRay/Schema`
 
 ## Does `option remote_scope` control remote names?
 Yes. The plugin compiler and `src/Compiler.luau` both honor `option remote_scope`.

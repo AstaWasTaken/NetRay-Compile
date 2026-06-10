@@ -13,3 +13,4 @@ Output is always written to:
 - `ReplicatedStorage/NetRay/Server`
 - `ReplicatedStorage/NetRay/Client`
 - `ReplicatedStorage/NetRay/Types`
+- `ReplicatedStorage/NetRay/Schema`

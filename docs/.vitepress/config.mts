@@ -1,10 +1,13 @@
 import { defineConfig } from 'vitepress'
 
+const base = "/NetRay-Compile/"
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
+    head: [["link", { rel: "icon", href: `${base}Icon.png` }]],
     title: "NetRay Compile",
     description: "Documentation for the NetRay IDL compiler plugin and standalone CLI",
-    base: "/NetRay-Compile/", // Important for GitHub Pages deployment
+    base, // Important for GitHub Pages deployment
     themeConfig: {
         siteTitle: false,
         logo: '/Vector.png',

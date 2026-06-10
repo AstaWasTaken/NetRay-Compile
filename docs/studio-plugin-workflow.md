@@ -6,6 +6,7 @@ Install source: [NetRayCompilerPlugin on Creator Store](https://create.roblox.co
 The plugin widget includes:
 - **Remote Scope Name** textbox.
 - **IDL Schema** multiline editor.
+- Scroll wheel support in the schema editor.
 - **Compile to ReplicatedStorage** button.
 - **Load Selection** button.
 - **Clear** button.
@@ -19,6 +20,7 @@ The plugin widget includes:
   - `Server`
   - `Client`
   - `Types`
+  - `Schema` reference module with the compiled input commented out.
 
 ### Load Selection
 - Requires exactly one selected `LuaSourceContainer` (`Script`, `LocalScript`, or `ModuleScript`).
@@ -33,7 +35,7 @@ The plugin widget includes:
 
 ## Write Behavior
 - If `ReplicatedStorage/NetRay` does not exist, plugin creates a `Folder`.
-- Existing non-`ModuleScript` children named `Server`, `Client`, or `Types` are replaced.
+- Existing non-`ModuleScript` children named `Server`, `Client`, `Types`, or `Schema` are replaced.
 - Existing matching `ModuleScript`s are overwritten in place.
 
 ## Common Plugin Errors
